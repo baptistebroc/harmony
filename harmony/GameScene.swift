@@ -1,6 +1,5 @@
 import SpriteKit
 import GameplayKit
-import HealthKit
 
 class GameScene: SKScene {
     
@@ -10,7 +9,7 @@ class GameScene: SKScene {
     
     override func didMove(to view: SKView) {
         backgroundColor = .black
-        print("✅ GameScene a bien été affichée")
+        print("✅ GameScene affichée")
         
         self.anchorPoint = CGPoint(x: 0.5, y: 0.5)
 
@@ -22,11 +21,11 @@ class GameScene: SKScene {
         background.zPosition = -1
         addChild(background)
 
-        // Ajout du cœur sous forme de sprite
-        heartSprite = SKSpriteNode(imageNamed: "heart")  // Assurez-vous d'avoir "heart.png" dans Assets.xcassets
+        // Ajout du cœur sous forme de sprite (taille réduite)
+        heartSprite = SKSpriteNode(imageNamed: "heart")
         heartSprite.position = CGPoint.zero
         heartSprite.zPosition = 1
-        heartSprite.setScale(1.0)  // Taille initiale
+        heartSprite.setScale(0.33)  // Taille trois fois plus petite
         addChild(heartSprite)
 
         // Label affichant le BPM
@@ -48,24 +47,30 @@ class GameScene: SKScene {
         print("💓 Mise à jour : \(heartRate) BPM")
         heartRateLabel.text = "Fréquence cardiaque : \(Int(heartRate)) BPM"
 
-        // Animation du battement du cœur
-        let scaleFactor = CGFloat(1.0 + (heartRate - 60) / 50.0)  // Plus le BPM est haut, plus le cœur s’agrandit
-        let beatSpeed = max(0.1, 1.5 - CGFloat((heartRate - 60) / 80.0))  // Ajustement de la vitesse des battements
-        let beatAnimation = SKAction.sequence([
-            SKAction.scale(to: scaleFactor, duration: Double(beatSpeed) / 2),
-            SKAction.scale(to: 1.0, duration: Double(beatSpeed) / 2)
-        ])
-        heartSprite.run(beatAnimation)
+        // Calage du battement en mode "papoum papoum"
+        let beatSpeed = max(0.1, 60.0 / CGFloat(heartRate))  // Temps d'un battement basé sur les BPM
+        let pauseTime = beatSpeed * 0.4 // Petite pause après les deux battements
 
-        // Dégradé de couleur du vert au rouge
-        let colorBlendFactor = min(1.0, (heartRate - 60) / 80.0)
-        let newColor = UIColor(
-            red: min(1, colorBlendFactor * 1.5),
-            green: max(0, 1.5 - colorBlendFactor * 2),
-            blue: max(0, 0.5 - abs(colorBlendFactor - 0.5)),
-            alpha: 1.0
-        )
+        let papoumAnimation = SKAction.sequence([
+            SKAction.scale(to: 0.38, duration: Double(beatSpeed) / 3),  // Papoum 1
+            SKAction.scale(to: 0.33, duration: Double(beatSpeed) / 6),
+            SKAction.scale(to: 0.36, duration: Double(beatSpeed) / 4),  // Papoum 2
+            SKAction.scale(to: 0.33, duration: Double(beatSpeed) / 6),
+            SKAction.wait(forDuration: Double(pauseTime))  // Pause entre les cycles
+        ])
+        
+        heartSprite.run(papoumAnimation)
+
+        // Dégradé de couleur : Rose clair (30 BPM) → Rouge foncé (120 BPM)
+        let blendFactor = min(1.0, (heartRate - 30) / 90.0)
+        
+        let red = 1.0 - (0.3 * blendFactor)  // Passe de 1.0 à 0.7
+        let green = 0.7 * (1.0 - blendFactor)  // Passe de 0.7 à 0.0
+        let blue = 0.8 - (0.8 * blendFactor)  // Passe de 0.8 à 0.0
+
+        let newColor = UIColor(red: CGFloat(red), green: CGFloat(green), blue: CGFloat(blue), alpha: 1.0)
         let colorizeAction = SKAction.colorize(with: newColor, colorBlendFactor: 1.0, duration: 0.2)
         heartSprite.run(colorizeAction)
     }
 }
+
